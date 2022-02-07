@@ -1,0 +1,10 @@
+services:
+  _defaults:
+    autowire: true
+    autoconfigure: true
+
+  Edeveloper\ContaoSubscriptionBundle\Cron\CheckSubscriptionStatus: ~
+  Edeveloper\ContaoSubscriptionBundle\Cron\CreateRenewalSubscriptionInvoices: ~
+  Edeveloper\ContaoSubscriptionBundle\Cron\UpdateSubscriptionUsageCount: ~
+  Edeveloper\ContaoSubscriptionBundle\EventListener\DataContainer\InvoicePaidListener: ~
+  Edeveloper\ContaoSubscriptionBundle\EventListener\DataContainer\InvoiceNumberListener: ~

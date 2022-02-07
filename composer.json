@@ -1,0 +1,20 @@
+{
+  "name":"edeveloper/contao-subscription-bundle",
+  "description":"Contao Subscription Bundle.",
+  "type": "contao-bundle",
+  "license":"AGPL-3.0-or-later",
+  "version": "1.0.0",
+  "require": {
+    "contao/core-bundle": "^4.9",
+    "codefog/contao-haste": "^4.25.2",
+    "mpdf/mpdf": "^8.0"
+  },
+  "extra": {
+    "contao-manager-plugin": "Edeveloper\\ContaoSubscriptionBundle\\ContaoManager\\Plugin"
+  },
+  "autoload": {
+    "psr-4": {
+      "Edeveloper\\ContaoSubscriptionBundle\\": "src/"
+    }
+  }
+}

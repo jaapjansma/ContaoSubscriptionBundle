@@ -1,0 +1,26 @@
+<html>
+<body>
+    <div style="font-size:14px; line-height: 18px;">
+        <table cellspacing="0" cellpadding="0" border="0" style="width: 100%;">
+            <tr>
+                <td style="width:65%;font-size:34px;margin:0;padding:0;line-height:34px"><?php echo $this->invoice->document_number; ?></td>
+                <td rowspan="2" style="width:40%">
+                    <?php echo date($GLOBALS['TL_CONFIG']['dateFormat'], $this->invoice->date); ?><br />
+                    <?php echo $this->invoice->company_name; ?><br />
+                    <?php echo $this->invoice->street; ?><br />
+                    <?php echo $this->invoice->postal; ?> <?php echo $this->invoice->city; ?><br />
+                </td>
+            </tr>
+        </table>
+
+    </div>
+
+<br><br>
+
+<?php echo $this->invoice->description; ?><br />
+<strong>&euro;&nbsp;<?php echo $this->invoice->price; ?></strong><br />
+<br />
+<br />
+<?php echo $this->invoice->invoice_note ?><br />
+</body>
+</html>
