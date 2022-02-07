@@ -18,112 +18,57 @@
 
 namespace Edeveloper\ContaoSubscriptionBundle\Backend;
 
+use Contao\Controller;
 use Contao\DataContainer;
-use Contao\Environment;
-use Haste\Util\StringUtil;
+use Edeveloper\ContaoSubscriptionBundle\Helper\PdfHelper;
+use Edeveloper\ContaoSubscriptionBundle\Model\SubscriptionModel;
 use Contao\System;
 use Edeveloper\ContaoSubscriptionBundle\Model\InvoiceModel;
 
 class InvoiceModule {
 
-  protected $documentTpl = 'subscription_invoice';
-
-  public function printDocument(DataContainer $dc) {
-    $invoice = InvoiceModel::findByPk($dc->id);
-    $ids[] = $dc->id;
-    $pdf = $this->createPdf($ids);
-    $pdf->Output($this->prepareFileName($invoice->document_number) . '.pdf', 'D');
-  }
+  protected $invoiceDocumentTpl = 'subscription_invoice';
 
   /**
-   * @param $ids
+   * Print an invoice.
    *
-   * @return \Mpdf\Mpdf
+   * @param \Contao\DataContainer $dc
+   *
+   * @return void
    * @throws \Mpdf\MpdfException
    */
-  protected function createPdf($ids) {
-    $pdf        = $this->generatePDF();
-    foreach($ids as $id) {
-      $invoice = InvoiceModel::findByPk($id);
-      $pdf->AddPage('P', '', '1', '', '', '10', '10', '25', '20');
-      /** @var \Contao\FrontendTemplate|\stdClass $objTemplate */
-      $objTemplate = new \Contao\FrontendTemplate($this->documentTpl);
-      $objTemplate->invoice = $invoice;
-      $pdf->writeHTML($objTemplate->parse());
-    }
-    return $pdf;
+  public function printDocument(DataContainer $dc) {
+    $invoice = InvoiceModel::findByPk($dc->id);
+    $pdfHelper = new PdfHelper();
+    $pdf = $pdfHelper->generatePDF();
+    $pdf->AddPage('P', '', '1', '', '', '10', '10', '25', '20');
+    /** @var \Contao\FrontendTemplate|\stdClass $objTemplate */
+    $objTemplate = new \Contao\FrontendTemplate($this->invoiceDocumentTpl);
+    $objTemplate->invoice = $invoice;
+    $pdf->writeHTML($objTemplate->parse());
+    $pdfHelper->DownloadPdf($pdf, $invoice->document_number);
   }
 
   /**
-   * Prepare file name
+   * Mark an invoice as paid
    *
-   * @param string $strName   File name
+   * @param \Contao\DataContainer $dc
    *
-   * @return string Sanitized file name
+   * @return void
    */
-  protected function prepareFileName($strName)
-  {
-    // Replace simple tokens
-    $strName = $this->sanitizeFileName(StringUtil::recursiveReplaceTokensAndTags($strName, StringUtil::NO_TAGS | StringUtil::NO_BREAKS | StringUtil::NO_ENTITIES));
-    return $strName;
-  }
-
-  /**
-   * Sanitize file name
-   *
-   * @param string $strName              File name
-   * @param bool   $blnPreserveUppercase Preserve uppercase (true by default)
-   *
-   * @return string Sanitized file name
-   */
-  protected function sanitizeFileName($strName, $blnPreserveUppercase = true)
-  {
-    return standardize(ampersand($strName, false), $blnPreserveUppercase);
-  }
-
-  /**
-   * Generate the pdf document
-   *
-   * @return \Mpdf\Mpdf
-   */
-  protected function generatePDF()
-  {
-    // Get the project directory
-    $projectDir = System::getContainer()->getParameter('kernel.project_dir');
-
-    // Include TCPDF config
-    if (file_exists($projectDir.'/system/config/tcpdf.php')) {
-      require_once $projectDir.'/system/config/tcpdf.php';
-    } elseif (file_exists($projectDir.'/vendor/contao/core-bundle/src/Resources/contao/config/tcpdf.php')) {
-      require_once $projectDir.'/vendor/contao/core-bundle/src/Resources/contao/config/tcpdf.php';
-    } elseif (file_exists($projectDir.'/vendor/contao/tcpdf-bundle/src/Resources/contao/config/tcpdf.php')) {
-      require_once $projectDir.'/vendor/contao/tcpdf-bundle/src/Resources/contao/config/tcpdf.php';
+  public function markAsPaid(DataContainer $dc) {
+    // Call onload_callback (e.g. to check permissions)
+    $invoice = InvoiceModel::findByPk($dc->id);
+    $previousPaidStatus = $invoice->paid;
+    $invoice->paid = '1';
+    $invoice->save();
+    if (!$previousPaidStatus && $invoice->paid && $invoice->subscription) {
+      $subsciption = SubscriptionModel::findByPk($invoice->subscription);
+      $subsciption->prolong();
     }
 
-    $defaultConfig = (new \Mpdf\Config\ConfigVariables())->getDefaults();
-    $fontDirs = $defaultConfig['fontDir'];
-
-    $defaultFontConfig = (new \Mpdf\Config\FontVariables())->getDefaults();
-    $fontData = $defaultFontConfig['fontdata'];
-
-    // Create new PDF document
-    $pdf = new \Mpdf\Mpdf([
-      'fontDir' => $fontDirs,
-      'fontdata' => $fontData,
-      'format' => \defined('PDF_PAGE_FORMAT') ? PDF_PAGE_FORMAT : 'A4',
-      'orientation' => \defined('PDF_PAGE_ORIENTATION') ? PDF_PAGE_ORIENTATION : 'P',
-      'margin_left' => \defined('PDF_MARGIN_LEFT') ? PDF_MARGIN_LEFT : 15,
-      'margin_right' => \defined('PDF_MARGIN_RIGHT') ? PDF_MARGIN_RIGHT : 15,
-      'margin_top' => \defined('PDF_MARGIN_TOP') ? PDF_MARGIN_TOP : 10,
-      'margin_bottom' => \defined('PDF_MARGIN_BOTTOM') ? PDF_MARGIN_BOTTOM : 10,
-      'default_font_size' => \defined('PDF_FONT_SIZE_MAIN') ? PDF_FONT_SIZE_MAIN : 12,
-      'default_font' => \defined('PDF_FONT_NAME_MAIN') ? PDF_FONT_NAME_MAIN : 'freeserif',
-    ]);
-
-    // Set document information
-    $pdf->SetCreator(\defined('PDF_CREATOR') ? PDF_CREATOR : 'Contao Open Source CMS');
-    $pdf->SetAuthor(\defined('PDF_AUTHOR') ? PDF_AUTHOR : Environment::get('url'));
-    return $pdf;
+    $url = System::getContainer()->get('router')->generate('contao_backend', ['do' => 'invoices']);
+    Controller::redirect($url);
   }
 
 }

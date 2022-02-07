@@ -32,3 +32,4 @@ $GLOBALS['TL_LANG']['tl_invoice']['description'] = ['Description', ''];
 $GLOBALS['TL_LANG']['tl_invoice']['document_number'] = ['Invoice Number', ''];
 $GLOBALS['TL_LANG']['tl_invoice']['subscription_description'] = 'Subscription for %s users';
 $GLOBALS['TL_LANG']['tl_invoice']['print_document'] = ['Print document', 'Print document'];
+$GLOBALS['TL_LANG']['tl_invoice']['mark_paid'] = ['Mark as paid', 'Mark the invoice as paid'];

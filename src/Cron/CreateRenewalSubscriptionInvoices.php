@@ -18,11 +18,11 @@
 
 namespace Edeveloper\ContaoSubscriptionBundle\Cron;
 
+use Contao\CoreBundle\Framework\ContaoFramework;
 use Contao\CoreBundle\ServiceAnnotation\CronJob;
 use Doctrine\DBAL\Connection;
 use Edeveloper\ContaoSubscriptionBundle\Model\InvoiceModel;
 use Edeveloper\ContaoSubscriptionBundle\Model\SubscriptionModel;
-use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -30,7 +30,7 @@ use Psr\Log\LoggerInterface;
  *
  * @CronJob("minutely")
  */
-class CreateRenewalSubscriptionInvoices implements LoggerAwareInterface {
+class CreateRenewalSubscriptionInvoices {
 
   /**
    * @var \Doctrine\DBAL\Connection
@@ -42,12 +42,10 @@ class CreateRenewalSubscriptionInvoices implements LoggerAwareInterface {
    */
   protected $logger;
 
-  public function __construct(Connection $connection) {
+  public function __construct(Connection $connection, LoggerInterface $logger, ContaoFramework $framework) {
     $this->connection = $connection;
-  }
-
-  public function setLogger(LoggerInterface $logger) {
     $this->logger = $logger;
+    $framework->initialize();
   }
 
 
@@ -56,8 +54,7 @@ class CreateRenewalSubscriptionInvoices implements LoggerAwareInterface {
         SELECT `id`   
         FROM `" . SubscriptionModel::getTable() . "` 
         WHERE 
-          `active` = 0 
-          AND `expire` IS NOT NULL AND FROM_UNIXTIME(`expire`) < CURRENT_DATE()
+          `status` = 2 
           AND `" . SubscriptionModel::getTable() . "`.`id` NOT IN (
             SELECT `subscription` 
             FROM `" . InvoiceModel::getTable() . "` 
@@ -69,6 +66,9 @@ class CreateRenewalSubscriptionInvoices implements LoggerAwareInterface {
 
     $objRows = $this->connection->prepare($subscriptionSql)->executeQuery();
     foreach($objRows as $row) {
+      if (empty($row['id'])) {
+        continue;
+      }
       $subscription = SubscriptionModel::findByPk($row['id']);
       $invoice = $subscription->createNewInvoice();
       $loggerContext['invoice'] = $invoice->document_number;

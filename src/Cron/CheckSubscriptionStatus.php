@@ -39,18 +39,26 @@ class CheckSubscriptionStatus {
   }
 
   public function __invoke(): void {
-    \Contao\System::loadLanguageFile(SubscriptionModel::getTable());
-
+    $inactiveSql = "
+      UPDATE `" . SubscriptionModel::getTable() . "` 
+      SET `status` = 0 
+      WHERE `status` != 0 AND (`start` IS NOT NULL AND FROM_UNIXTIME(`start`) > CURRENT_DATE())";
+    $this->connection->executeQuery($inactiveSql);
     $activateSql = "
       UPDATE `" . SubscriptionModel::getTable() . "` 
-      SET `active` = 1 
-      WHERE `active` = 0 AND (`start` IS NULL OR FROM_UNIXTIME(`start`) < CURRENT_DATE()) AND (`expire` IS NULL OR FROM_UNIXTIME(`expire`) > CURRENT_DATE())";
+      SET `status` = 1 
+      WHERE `status` != 1 AND (`start` IS NULL OR FROM_UNIXTIME(`start`) < CURRENT_DATE()) AND (`expire` IS NULL OR FROM_UNIXTIME(`expire`) > CURRENT_DATE())";
     $this->connection->executeQuery($activateSql);
-    $deactivateSql = "
+    $graceSql = "
       UPDATE `" . SubscriptionModel::getTable() . "` 
-      SET `active` = 0 
-      WHERE `active` = 1 AND ((`start` IS NOT NULL AND FROM_UNIXTIME(`start`) > CURRENT_DATE()) OR (`expire` IS NOT NULL AND FROM_UNIXTIME(`expire`) < CURRENT_DATE()))";
-    $this->connection->executeQuery($deactivateSql);
+      SET `status` = 2 
+      WHERE `status` IN (0, 1) AND (`expire` IS NOT NULL AND FROM_UNIXTIME(`expire`) < CURRENT_DATE() AND FROM_UNIXTIME(`expire`) < DATE_ADD(NOW(), INTERVAL 3 MONTH))";
+    $this->connection->executeQuery($graceSql);
+    $expireSql = "
+      UPDATE `" . SubscriptionModel::getTable() . "` 
+      SET `status` = 3 
+      WHERE `status` IN (0, 1, 2) AND (`expire` IS NOT NULL AND FROM_UNIXTIME(`expire`) >= DATE_ADD(NOW(), INTERVAL 3 MONTH))";
+    $this->connection->executeQuery($expireSql);
   }
 
 }

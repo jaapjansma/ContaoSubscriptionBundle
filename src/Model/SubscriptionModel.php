@@ -49,4 +49,20 @@ class SubscriptionModel extends Model {
     return $invoice;
   }
 
+  /**
+   * Prolong the subscription.
+   *
+   * @return void
+   */
+  public function prolong() {
+    $monthsInSeconds = 30 * 24 * 60 * 60;
+    $updateSql = "
+        UPDATE `" . static::$strTable . "` 
+        SET `expire` = UNIX_TIMESTAMP(DATE_ADD(FROM_UNIXTIME(`expire`),  INTERVAL ? MONTH)) 
+        WHERE `id` = ? 
+        AND ((`start` IS NOT NULL AND FROM_UNIXTIME(`start`) > CURRENT_DATE()) OR (`expire` IS NOT NULL AND FROM_UNIXTIME(`expire`) < CURRENT_DATE()))
+      ";
+    \Database::getInstance()->prepare($updateSql)->execute($this->period, $this->id);
+  }
+
 }

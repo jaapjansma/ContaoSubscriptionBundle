@@ -19,13 +19,16 @@
 use \Edeveloper\ContaoSubscriptionBundle\Model\InvoiceModel;
 use \Edeveloper\ContaoSubscriptionBundle\Model\SubscriptionModel;
 use \Edeveloper\ContaoSubscriptionBundle\Backend\InvoiceModule;
+use \Edeveloper\ContaoSubscriptionBundle\Backend\SubscriptionModule;
 
 $GLOBALS['BE_MOD']['accounts']['subscriptions'] = [
-  'tables'            => [SubscriptionModel::getTable()]
+  'tables'            => [SubscriptionModel::getTable()],
+  'create_invoice'    => [SubscriptionModule::class, 'createInvoice'],
 ];
 $GLOBALS['BE_MOD']['accounts']['invoices'] = [
   'tables'            => [InvoiceModel::getTable()],
-  'print_document'    => array(InvoiceModule::class, 'printDocument'),
+  'print_document'    => [InvoiceModule::class, 'printDocument'],
+  'mark_paid'         => [InvoiceModule::class, 'markAsPaid'],
 ];
 
 $GLOBALS['TL_MODELS'][SubscriptionModel::getTable()] = SubscriptionModel::class;

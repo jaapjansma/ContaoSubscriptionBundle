@@ -63,6 +63,18 @@ $GLOBALS['TL_DCA']['tl_invoice'] = array
         'href'              => 'key=print_document',
         'icon'              => 'bundles/contaosubscription/document-pdf-text.png',
       ),
+      'mark_paid' => array
+      (
+        'label'             => &$GLOBALS['TL_LANG']['tl_invoice']['mark_paid'],
+        'href'              => 'key=mark_paid',
+        'icon'              => 'bundles/contaosubscription/ok.gif',
+        'button_callback'   => function($row, $href, $label, $title, $icon, $attributes) {
+          if (empty($row['paid'])) {
+            return '<a href="' . \Contao\Backend::addToUrl($href . '&amp;id=' . $row['id']) . '" title="' . Contao\StringUtil::specialchars($title) . '"' . $attributes . '>' . Contao\Image::getHtml($icon, $label) . '</a> ';
+          }
+          return '';
+        }
+      ),
       'edit' => array
       (
         'href'                => 'act=edit',

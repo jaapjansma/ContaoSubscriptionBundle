@@ -37,14 +37,14 @@ $GLOBALS['TL_DCA']['tl_subscription'] = array
     'sorting' => array
     (
       'mode'                    => 1,
-      'fields'                  => array('start'),
+      'fields'                  => array('status', 'start'),
       'flag'                    => 0,
       'panelLayout'             => 'sort,filter,search,limit'
     ),
     'label' => array
     (
       'showColumns'             => true,
-      'fields'                  => array('company_name', 'active', 'max_users', 'usage_count', 'start', 'expire'),
+      'fields'                  => array('company_name', 'status', 'max_users', 'usage_count', 'start', 'expire'),
     ),
     'global_operations' => array
     (
@@ -62,6 +62,12 @@ $GLOBALS['TL_DCA']['tl_subscription'] = array
         'href'                => 'act=edit',
         'icon'                => 'edit.svg',
       ),
+      'create_invoice' => array
+      (
+        'label'             => &$GLOBALS['TL_LANG']['tl_subscription']['create_invoice'],
+        'href'              => 'key=create_invoice',
+        'icon'              => 'bundles/contaosubscription/store.gif',
+      ),
       'delete' => array
       (
         'href'                => 'act=delete',
@@ -74,7 +80,7 @@ $GLOBALS['TL_DCA']['tl_subscription'] = array
   // Palettes
   'palettes' => array
   (
-    'default'                     => 'start,expire;active;max_users;price;{invoice_legend},company_name,email,street,postal,city,country;invoice_note'
+    'default'                     => 'start,expire;status;period,max_users;usage_count;price;{invoice_legend},company_name,email,street,postal,city,country;invoice_note'
   ),
 
   // Subpalettes
@@ -148,12 +154,14 @@ $GLOBALS['TL_DCA']['tl_subscription'] = array
       'eval'                    => array('mandatory'=>true, 'maxlength'=>255, 'rgxp'=>'email', 'unique'=>true, 'decodeEntities'=>true, 'tl_class'=>'w50'),
       'sql'                     => "varchar(255) NOT NULL default ''"
     ),
-    'active' => array
+    'status' => array
     (
       'filter'                  => true,
-      'inputType'               => 'checkbox',
-      'eval'                    => array(),
+      'inputType'               => 'radio',
+      'eval'                    => array('mandatory'=>true, 'tl_class'=>'w50'),
       'sql'                     => "char(1) NOT NULL DEFAULT '1'",
+      'options'                 => ['0', '1', '2', '3'],
+      'reference'               => &$GLOBALS['TL_LANG']['tl_subscription']['status_options'],
       'default'                 => '1',
     ),
     'start' => array
@@ -181,6 +189,34 @@ $GLOBALS['TL_DCA']['tl_subscription'] = array
       'default'                 => '0',
     ),
     'usage_count' => array
+    (
+      'inputType'               => 'text',
+      'eval'                    => array('rgxp' => 'natural'),
+      'sql'                     => "int(10) unsigned NOT NULL default 0",
+      'flag'                    => 11,
+      'default'                 => '0',
+      'input_field_callback'    => function(\Contao\DataContainer $dc, $label) {
+        $html = '<div class="widget"><h3>' .$GLOBALS['TL_LANG']['tl_subscription']['members'] . '</h3><ul>';
+        $db = \Database::getInstance();
+        $result = $db->prepare("SELECT * FROM `tl_member` WHERE `disable` !='1' AND (`start` = '' OR `start` <= NOW()) AND (`stop` = '' OR `stop` > NOW()) AND `subscription` = ?")->execute($dc->id);
+        while($result->next()) {
+          $group_ids = unserialize($result->groups);
+          $groups = [];
+          foreach($group_ids as $group_id) {
+            $group = MemberGroupModel::findByPk($group_id);
+            $groups[] = $group->name;
+          }
+          $html .= '<li>'.$result->firstname . ' '.$result->lastname;
+          if (count($groups)) {
+            $html .= ' (' . implode(", ", $groups) . ')';
+          }
+          $html .= '</li>';
+        }
+        $html .= '</ul></div>';
+        return $html;
+      }
+    ),
+    'period' => array
     (
       'inputType'               => 'text',
       'eval'                    => array('rgxp' => 'natural'),

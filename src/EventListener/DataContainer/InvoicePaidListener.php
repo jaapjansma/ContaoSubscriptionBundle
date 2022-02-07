@@ -18,6 +18,7 @@
 
 namespace Edeveloper\ContaoSubscriptionBundle\EventListener\DataContainer;
 
+use Contao\Backend;
 use Contao\CoreBundle\ServiceAnnotation\Callback;
 use Contao\DataContainer;
 use Doctrine\DBAL\Connection;
@@ -63,14 +64,8 @@ class InvoicePaidListener
   public function onSubmitCallback(DataContainer $dc): void
   {
     if ($this->currentInvoice && !$this->currentInvoice->paid && $dc->activeRecord->paid && $dc->activeRecord->subscription) {
-      $year = 365 * 24 * 60 * 60;
-      $updateSql = "
-        UPDATE `" . SubscriptionModel::getTable() . "` 
-        SET `expire` = `expire` + {$year} 
-        WHERE `id` = ? 
-        AND ((`start` IS NOT NULL AND FROM_UNIXTIME(`start`) > CURRENT_DATE()) OR (`expire` IS NOT NULL AND FROM_UNIXTIME(`expire`) < CURRENT_DATE()))
-      ";
-      $this->connection->prepare($updateSql)->executeQuery([$dc->activeRecord->subscription]);
+      $subsciption = SubscriptionModel::findByPk($dc->activeRecord->subscription);
+      $subsciption->prolong();
     }
   }
 }

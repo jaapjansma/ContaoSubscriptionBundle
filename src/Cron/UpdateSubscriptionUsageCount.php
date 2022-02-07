@@ -39,11 +39,10 @@ class UpdateSubscriptionUsageCount {
   }
 
   public function __invoke(): void {
-    \Contao\System::loadLanguageFile(SubscriptionModel::getTable());
     $sql = "
         UPDATE `" . SubscriptionModel::getTable() ."`
         SET `usage_count` = 0
-        WHERE `active` = '1'";
+        WHERE `status` = '0' OR `status` = '1' OR `status` = '2'";
     $this->connection->executeQuery($sql);
 
     $sql = "
@@ -55,7 +54,7 @@ class UpdateSubscriptionUsageCount {
           AND `subscription` = `" . SubscriptionModel::getTable() ."`.`id`
           GROUP BY `subscription`
         )
-        WHERE `active` = '1'";
+        WHERE `status` = '0' OR `status` = '1' OR `status` = '2'";
     $this->connection->executeQuery($sql);
   }
 
