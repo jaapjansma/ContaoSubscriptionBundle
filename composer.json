@@ -3,7 +3,7 @@
   "description":"Contao Subscription Bundle.",
   "type": "contao-bundle",
   "license":"AGPL-3.0-or-later",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "require": {
     "contao/core-bundle": "^4.9",
     "codefog/contao-haste": "^4.25.2",
